@@ -112,7 +112,7 @@ def simplex(A, b, relcost, totalcost):
         # break
         print('Found no better option')
     else:
-        value,position = min(((b,a) for a,b in enumerate(theta) if b>0), default=(None,None))
+        value,position = min(((c,a) for a,c in enumerate(theta) if c>0), default=(None,None))
         print(position, value)
     # exitingColumn = numARows + (position+1)
     exitingColumn = BFSidx[position]
