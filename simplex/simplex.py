@@ -86,23 +86,27 @@ def simplex(A, b, relcost, totalcost):
     # print(B.shape)
     # print(Binv)
     # print(b)
-    newb = Binv.dot(b)
-    print(newb)
+    b = Binv.dot(b)
+    print(b)
+
+    # Capture the indices of current BFS
+    BFSidx=np.array(range(numARows))
+    print('BFSidx: ', BFSidx)
 
     # This is where we clear the relcost above pivots and update total cost
     # print(relcost, relcost[0],B[0,:])
     for idx in range(0,numARows):
-        totalcost += -relcost[idx]*newb[idx]
+        totalcost += -relcost[idx]*b[idx]
         relcost += -relcost[idx]*B[idx,:]
     # print(relcost, totalcost)
 
     # Find the largest negative relative cost and swap in that column
-    mincostcolumn = np.argmin(relcost)
-    # print(mincostcolumn)
+    enteringColumn = np.argmin(relcost)
+    print('Entering: ', enteringColumn)
 
     # Find the exiting column via the theta rule
-    theta = np.divide(newb,B[:,mincostcolumn])
-    print(B[:,mincostcolumn])
+    theta = np.divide(b,B[:,enteringColumn])
+    print(B[:,enteringColumn])
     print(theta)
     if (all(theta <= 0)):
         # break
@@ -110,21 +114,42 @@ def simplex(A, b, relcost, totalcost):
     else:
         value,position = min(((b,a) for a,b in enumerate(theta) if b>0), default=(None,None))
         print(position, value)
-    exitingColumn = numARows + (position+1)
-    print(exitingColumn)
+    # exitingColumn = numARows + (position+1)
+    exitingColumn = BFSidx[position]
+    print('Exiting: ', exitingColumn)
+
+    # Update the BFSidx
+    BFSidx[exitingColumn] = enteringColumn
+    print('BFSidx: ', BFSidx)
 
     concat = np.concatenate((B, identity), axis=1)
-    print(concat)
-    print(B)
+    # print(concat)
+    # print(B)
     # Clear rows above and below the new pivot
+    # Normalize the pivot row
+    concat[exitingColumn,:] /= concat[exitingColumn, enteringColumn]
+    print(concat[exitingColumn,:])
+    print(concat)
     for idx in range(0,numARows):
         if (idx == exitingColumn):
-            # Normalize the pivot
-            concat[idx,:] /= B[mincostcolumn,exitingColumn]
+            # skip
+            print('Skipping row: ', idx)
         else:
             # row operation to clear rows
-            concat[idx,:] += -concat[idx, exitingColumn]*B[mincostcolumn,exitingColumn]
+            concat[idx,:] += -concat[idx, enteringColumn]*concat[exitingColumn,:]
+    print(concat)
 
+    # FIXME something below here is broken
+    Binv = concat[:,numAColumns:]
+    B = concat[:,0:numAColumns]
+    print('Binv: ', Binv)
+    # print(b)
+    b = Binv.dot(b)
+    print('b: ',b)
+    for idx in range(0,numARows):
+        totalcost += -relcost[idx]*b[idx]
+        relcost += -relcost[idx]*B[idx,:]
+    print(relcost, totalcost)
 
 
 if __name__ == '__main__':
