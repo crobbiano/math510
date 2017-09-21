@@ -93,45 +93,45 @@ def simplex(A, b, relcost, totalcost):
 
     # Capture the indices of current BFS
     BFSidx=np.array(range(m))
-    print('BFSidx: ', BFSidx)
+    # print('BFSidx: ', BFSidx)
 
     # This is where we clear the relcost above pivots and update total cost
     # print(relcost, relcost[0],ARREF[0,:])
     for idx in range(0,m):
         totalcost += -relcost[idx]*b[idx]
         relcost += -relcost[idx]*ARREF[idx,:]
-    print('costs1: ', relcost, totalcost)
+    # print('costs1: ', relcost, totalcost)
 
     loopIdx = 0;
     while(1):
         loopIdx+=1
         print('\n\nLoop: ', loopIdx, ' RelCosts: ', relcost)
+        print('BFSidx: ', BFSidx)
         # Find the column indexes where the relative costs is < 0
         nonBFSidx = list(set(range(0,n)) - set(BFSidx))
-        T = [relcost[i] for i in nonBFSidx]
-        print('T',T)
+        # T = [relcost[i] for i in nonBFSidx]
+        # print('T',T)
         negCosts = np.array([i for i,v in enumerate(relcost) if v < -0])
-        print('negCosts: ',negCosts)
+        # print('negCosts: ',negCosts)
         # negCosts = [i for i,v in enumerate(T) if v < 0]
         # print('relcost: ', relcost)
         # Find the largest negative relative cost and swap in that column
-        negCostIdx = 0
         # sortedNegCosts = negCosts.argsort()[:]
         sortedNegCosts = relcost.argsort()[:len(negCosts)]
+        negCostIdx = 0
         print('Sorted negCosts: ',sortedNegCosts)
         enteringColumn = sortedNegCosts[negCostIdx]
-        print('Entering: ', enteringColumn)
-        print('Entering Column: ', ARREF[:,enteringColumn])
+        print('Entering: ', enteringColumn, ' ', ARREF[:,enteringColumn])
         theta = np.divide(b,ARREF[:,enteringColumn])
         print('Theta: ', theta)
+
         while (all(theta <= 0) and negCostIdx<len(negCosts)):
             print('while idx: ', negCostIdx)
             enteringColumn = negCosts[negCostIdx]
-            # print('Entering: ', enteringColumn)
-            # print('line: ', ARREF[:,enteringColumn])
+            print('Entering: ', enteringColumn, ' ', ARREF[:,enteringColumn])
             theta = np.divide(b,ARREF[:,enteringColumn])
-            negCostIdx+=1
             print('Theta: ', theta)
+            negCostIdx+=1
 
 
         # Find the exiting column via the theta rule
@@ -148,32 +148,37 @@ def simplex(A, b, relcost, totalcost):
         # Normalize the pivot row
         # print(concat[exitingColumn,:])
         # print('concat: ', concat)
-        print(BFSidx[BFSidx==exitingColumn])
-        concat[BFSidx[BFSidx==exitingColumn],:] /= concat[BFSidx[BFSidx==exitingColumn], enteringColumn]
+        rowIdx, = np.where(BFSidx==exitingColumn);
+        print('rowIdx',rowIdx)
+        concat[rowIdx,:] /= concat[rowIdx, enteringColumn]
         # print('concat: ', concat[BFSidx[BFSidx==exitingColumn],:])
         for idx in range(0,m):
-            if (idx == BFSidx[BFSidx==exitingColumn]):
+            if (idx == rowIdx):
                 # skip
                 print('Skipping row: ', idx)
             else:
                 # row operation to clear rows
-                # print(-concat[idx, enteringColumn]*concat[exitingColumn,:])
-                concat[idx,:] += -concat[idx, enteringColumn]*concat[exitingColumn,:]
+                print('rowScaled',-concat[idx, enteringColumn]*concat[rowIdx,:])
+                print('rowScaled',(-concat[idx, enteringColumn]*concat[rowIdx,:]).shape)
+                print('rowScaled',(-concat[idx, enteringColumn]*concat[exitingColumn,:]).shape)
+                print('rowScaled',(concat[idx,:]).shape)
+                concat[idx,:] += -concat[idx, enteringColumn]*concat[rowIdx,:]
                 # print('after', concat[idx,:] )
         print('after: ',concat)
 
         # Update the BFSidx
         BFSidx[exitingColumn] = enteringColumn
-        print('BFSidx: ', BFSidx)
+        # print('BFSidx: ', BFSidx)
 
 
         # FIXME something below here is broken - the indexing of everything is whacked
-        Binv = concat[:,n:]
+        Binvsingle = concat[:,n:]
+        Binv = Binv*Binvsingle
         ARREF = concat[:,0:n]
         print('Binv: ', Binv)
         # print(ARREF)
         b = Binv.dot(b)
-        # print('b: ',b)
+        print('b: ',b)
         for idx in range(0,m):
             totalcost += -relcost[BFSidx[BFSidx==enteringColumn]]*b[idx]
             relcost += -relcost[BFSidx[BFSidx==enteringColumn]]*ARREF[idx,:]
