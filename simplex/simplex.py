@@ -87,70 +87,91 @@ def simplex(A, b, relcost, totalcost):
     # print(Binv)
     # print(b)
     b = Binv.dot(b)
-    print(b)
+    print('b', b)
 
     # Capture the indices of current BFS
     BFSidx=np.array(range(numARows))
-    print('BFSidx: ', BFSidx)
+    # print('BFSidx: ', BFSidx)
 
     # This is where we clear the relcost above pivots and update total cost
     # print(relcost, relcost[0],B[0,:])
     for idx in range(0,numARows):
         totalcost += -relcost[idx]*b[idx]
         relcost += -relcost[idx]*B[idx,:]
-    # print(relcost, totalcost)
+    # print('costs: ', relcost, totalcost)
 
-    # Find the largest negative relative cost and swap in that column
-    enteringColumn = np.argmin(relcost)
-    print('Entering: ', enteringColumn)
+    loopIdx = 0;
+    while(1):
+        loopIdx+=1
+        smalls = [i for i,v in enumerate(relcost) if v < 0]
+        print('relcost: ', relcost)
+        print('Loop: ', loopIdx)
+        # Find the largest negative relative cost and swap in that column
+        negCostIdx = 0
+        largestNegCosts = relcost.argsort()[:len(smalls)]
+        print('smalls: ',largestNegCosts)
+        # print(largestNegCosts)
+        enteringColumn = largestNegCosts[negCostIdx]
+        theta = np.divide(b,B[:,enteringColumn])
+        while (all(theta <= 0) and negCostIdx<len(smalls)-1):
+            negCostIdx+=1
+            # print('idx: ', negCostIdx)
+            enteringColumn = largestNegCosts[negCostIdx]
+            # print('line: ', B[:,enteringColumn])
+            theta = np.divide(b,B[:,enteringColumn])
 
-    # Find the exiting column via the theta rule
-    theta = np.divide(b,B[:,enteringColumn])
-    print(B[:,enteringColumn])
-    print(theta)
-    if (all(theta <= 0)):
-        # break
-        print('Found no better option')
-    else:
+        print('Theta: ', theta)
+        # enteringColumn = np.argmin(relcost)
+        # print('Entering: ', enteringColumn)
+
+        # Find the exiting column via the theta rule
+        # print(B[:,enteringColumn])
+        # print(theta)
         value,position = min(((c,a) for a,c in enumerate(theta) if c>0), default=(None,None))
-        print(position, value)
-    # exitingColumn = numARows + (position+1)
-    exitingColumn = BFSidx[position]
-    print('Exiting: ', exitingColumn)
+        # print(position, value)
+        # exitingColumn = numARows + (position+1)
+        exitingColumn = BFSidx[position]
+        # print('Exiting: ', exitingColumn)
 
-    # Update the BFSidx
-    BFSidx[exitingColumn] = enteringColumn
-    print('BFSidx: ', BFSidx)
+        # Update the BFSidx
+        BFSidx[exitingColumn] = enteringColumn
+        # print('BFSidx: ', BFSidx)
 
-    concat = np.concatenate((B, identity), axis=1)
-    # print(concat)
-    # print(B)
-    # Clear rows above and below the new pivot
-    # Normalize the pivot row
-    concat[exitingColumn,:] /= concat[exitingColumn, enteringColumn]
-    print(concat[exitingColumn,:])
-    print(concat)
-    for idx in range(0,numARows):
-        if (idx == exitingColumn):
-            # skip
-            print('Skipping row: ', idx)
-        else:
-            # row operation to clear rows
-            concat[idx,:] += -concat[idx, enteringColumn]*concat[exitingColumn,:]
-    print(concat)
+        concat = np.concatenate((B, identity), axis=1)
+        # print(concat)
+        # print(B)
+        # Clear rows above and below the new pivot
+        # Normalize the pivot row
+        # print(concat[exitingColumn,:])
+        # print('concat: ', concat)
+        concat[exitingColumn,:] /= concat[exitingColumn, enteringColumn]
+        for idx in range(0,numARows):
+            if (idx == exitingColumn):
+                # skip
+                print('Skipping row: ', idx)
+            else:
+                # row operation to clear rows
+                # print(-concat[idx, enteringColumn]*concat[exitingColumn,:])
+                concat[idx,:] += -concat[idx, enteringColumn]*concat[exitingColumn,:]
+                # print('after', concat[idx,:] )
+        # print('after: ',concat)
 
-    # FIXME something below here is broken
-    Binv = concat[:,numAColumns:]
-    B = concat[:,0:numAColumns]
-    print('Binv: ', Binv)
-    # print(b)
-    b = Binv.dot(b)
-    print('b: ',b)
-    for idx in range(0,numARows):
-        totalcost += -relcost[idx]*b[idx]
-        relcost += -relcost[idx]*B[idx,:]
-    print(relcost, totalcost)
+        # FIXME something below here is broken
+        Binv = concat[:,numAColumns:]
+        B = concat[:,0:numAColumns]
+        # print('Binv: ', Binv)
+        # print(B)
+        b = Binv.dot(b)
+        # print('b: ',b)
+        for idx in range(0,numARows):
+            totalcost += -relcost[BFSidx[idx]]*b[idx]
+            relcost += -relcost[BFSidx[idx]]*B[idx,:]
+        # print('costs: ', relcost, totalcost)
+        if (all(relcost>=0)):
+            break
 
+    print('Finished')
+    print('costs: ', relcost, totalcost)
 
 if __name__ == '__main__':
     # Handle input args FIXME - doesn't error on no input
