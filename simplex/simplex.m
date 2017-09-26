@@ -15,7 +15,7 @@ clear data
 [m,n]=size(Aorig);
 %% Actual answer to compare against
 options = optimset('LargeScale','off','Simplex','on');
-[X,FVAL,EXITFLAG,OUTPUT]= linprog(zorig,[],[],Aorig,borig,zeros(size(zorig)),[],[],options)
+[X,FVAL,EXITFLAG,OUTPUT]= linprog(zorig,[],[],Aorig,borig,zeros(size(zorig)),[],[],options);
 %% Intro an atrificial basis with huge cost
 BFScols = n+1:n+m;
 Aaug = [Aorig eye(m) borig];
@@ -87,9 +87,11 @@ x = zeros(n,1);
 for i=1:m
     x(BFScols(i))=b(i);
 end
-
-z
-BFScols
-display(['mine:   [' num2str(x'),']'])
-display(['theirs: [' num2str(X'),']'])
+g=sprintf('%.3f ', z);
+display(['relative costs:   [' g ']'])
+display(['bfs columns:   [' num2str(BFScols),']'])
+g=sprintf('%.3f ', x);
+display(['mine:   [' g,']'])
+g=sprintf('%.3f ', X);
+display(['theirs: [' g,']'])
 display(['Finished looping after: ' num2str(loopCntr), ' loops'])

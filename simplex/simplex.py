@@ -19,6 +19,7 @@
 import sys, getopt
 import numpy as np
 import sympy as sp
+import csv
 
 def like_a_gauss(mat, b):
     """
@@ -69,6 +70,31 @@ def like_a_gauss(mat, b):
                 mat[r][cc] += mat[i][cc] * scalarMultiple
         # disregard this row and continue
     # print(mat)
+def ToReducedRowEchelonForm( M):
+    # if not M: return
+    lead = 0
+    rowCount = len(M)
+    columnCount = len(M[0])
+    for r in range(rowCount):
+        if lead >= columnCount:
+            return
+        i = r
+        while M[i][lead] == 0:
+            i += 1
+            if i == rowCount:
+                i = r
+                lead += 1
+                if columnCount == lead:
+                    return
+        M[i],M[r] = M[r],M[i]
+        lv = M[r][lead]
+        print(lv)
+        M[r] = [ mrx / float(lv) for mrx in M[r]]
+        for i in range(rowCount):
+            if i != r:
+                lv = M[i][lead]
+                M[i] = [ iv - lv*rv for rv,iv in zip(M[r],M[i])]
+        lead += 1
 
 def simplex(A, b, relcost, totalcost):
     # Do the steps here
@@ -81,12 +107,20 @@ def simplex(A, b, relcost, totalcost):
     # print(concat)
     # print(b)
     # RREF the concatenated matrix
-    like_a_gauss(concat, b)
+    # like_a_gauss(concat, b)
+    like_a_gauss(A, b)
+    with open('csvfile.csv', "w") as output:
+        writer = csv.writer(output, lineterminator='\n')
+        writer.writerows(A)
+    print('A:\n',A)
+    # ToReducedRowEchelonForm(concat)
+    # print(concat)
     Binv = concat[:,n:]
     ARREF = concat[:,0:n]
-    print('ARREF: ', ARREF)
+    print('ARREF: \n', ARREF)
     # print(ARREF.shape)
-    # print(Binv)
+    print(Binv)
+    print(Binv.dot(ARREF))
     # print(b)
     b = Binv.dot(b)
     print('b', b)
@@ -149,6 +183,7 @@ def simplex(A, b, relcost, totalcost):
         # print(concat[exitingColumn,:])
         # print('concat: ', concat)
         rowIdx, = np.where(BFSidx==exitingColumn);
+        rowIdx=rowIdx[0]
         print('rowIdx',rowIdx)
         concat[rowIdx,:] /= concat[rowIdx, enteringColumn]
         # print('concat: ', concat[BFSidx[BFSidx==exitingColumn],:])
@@ -158,16 +193,12 @@ def simplex(A, b, relcost, totalcost):
                 print('Skipping row: ', idx)
             else:
                 # row operation to clear rows
-                print('rowScaled',-concat[idx, enteringColumn]*concat[rowIdx,:])
-                print('rowScaled',(-concat[idx, enteringColumn]*concat[rowIdx,:]).shape)
-                print('rowScaled',(-concat[idx, enteringColumn]*concat[exitingColumn,:]).shape)
-                print('rowScaled',(concat[idx,:]).shape)
                 concat[idx,:] += -concat[idx, enteringColumn]*concat[rowIdx,:]
                 # print('after', concat[idx,:] )
         print('after: ',concat)
 
         # Update the BFSidx
-        BFSidx[exitingColumn] = enteringColumn
+        BFSidx[rowIdx] = enteringColumn
         # print('BFSidx: ', BFSidx)
 
 
@@ -186,10 +217,12 @@ def simplex(A, b, relcost, totalcost):
         if (all(relcost>=0)):
             break
 
-    print('Finished')
+    print('\n\n\nFinished')
     print('costs: ', relcost, totalcost)
+    print('b: ',b)
 
 if __name__ == '__main__':
+    np.set_printoptions(linewidth=200)
     # Handle input args FIXME - doesn't error on no input
     argv=sys.argv[1:]
     inputfile = ''
